@@ -3,16 +3,29 @@
   (:import (net.canarymod.plugin PluginListener Priority)
            (net.canarymod.hook Hook Dispatcher)
            (net.canarymod Canary Translator)
-           (net.canarymod.commandsys DynamicCommandAnnotation CanaryCommand TabCompleteDispatch)))
+           (net.canarymod.commandsys DynamicCommandAnnotation CanaryCommand TabCompleteDispatch)
+           (net.canarymod.logger Logman)))
 
-(def ^{:private true} repls (atom {}))
+(def ^{:dynamic 1} *plugin* nil)
+(def ^{:dynamic 1} *logman* (Logman/getLogman "ClojurePlugin"))
+
+(defmacro with-plugin
+  "Creates thread-local bindings for *plugin* and *logman*."
+  [plugin & body]
+  `(binding [*plugin* ~plugin
+             *logman* (.getLogman ~plugin)]
+     ~@body))
+
+(def ^{:private 1} repls (atom {}))
 
 (declare stop-repl)
 
 (defn start-repl [plugin port]
   (if (contains? @repls plugin)
     (stop-repl plugin)
-    (swap! repls #(assoc % plugin (start-server :port port)))))
+    (swap! repls #(assoc % plugin
+                           (with-plugin plugin
+                             (start-server :port port))))))
 
 (defn stop-repl [plugin]
   (stop-server (get @repls plugin))
@@ -32,7 +45,8 @@
                    hook-type
                    (proxy [Dispatcher] []
                      (execute [^PluginListener listener ^Hook hook]
-                       (hook-fn hook)))
+                       (with-plugin plugin
+                         (hook-fn hook))))
                    priority)))
 
 (defn- string-array [coll]
@@ -72,6 +86,23 @@
                                 (or (:translator command-meta) (Translator/getInstance))
                                 tcd]
                           (execute [caller args]
-                            (command caller args)))
+                            (with-plugin plugin
+                              (command caller args))))
                         plugin
                         force))))
+
+;; Logging functions
+(defn info [msg]
+  (.info *logman* msg))
+
+(defn error [msg]
+  (.error *logman* msg))
+
+(defn debug [msg]
+  (.debug *logman* msg))
+
+(defn warn [msg]
+  (.warn *logman* msg))
+
+(defn trace [msg]
+  (.trace *logman* msg))

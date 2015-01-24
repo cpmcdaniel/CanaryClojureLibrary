@@ -8,6 +8,7 @@
     <artifactId>clojurepluginlib</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <inceptionYear>2015</inceptionYear>
+    <url>https://github.com/cpmcdaniel/CanaryClojureLibrary</url>
 
     <organization>
         <name>CanaryMod Team</name>

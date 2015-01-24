@@ -4,6 +4,6 @@ pom.xml.releaseBackup
 pom.xml.versionsBackup
 pom.xml.next
 release.properties
-/ClojurePluginLibrary.iml
-/.idea/
-/.DS_Store
+*.iml
+.idea/
+.DS_Store
