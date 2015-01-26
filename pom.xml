@@ -105,6 +105,10 @@
             <name>Visual Illusions Repository</name>
             <url>http://repo.visualillusionsent.net/repository/public/</url>
         </repository>
+        <repository>
+          <id>clojars.org</id>
+          <url>http://clojars.org/repo</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -126,6 +130,20 @@
             <groupId>org.clojure</groupId>
             <artifactId>tools.nrepl</artifactId>
             <version>0.2.6</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>clojure-complete</groupId>
+            <artifactId>clojure-complete</artifactId>
+            <version>0.2.4</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>cider</groupId>
+            <artifactId>cider-nrepl</artifactId>
+            <version>0.8.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -171,6 +189,8 @@
                                 <includes>
                                     <include>org.clojure:clojure</include>
                                     <include>org.clojure:tools.nrepl</include>
+                                    <include>clojure-complete:clojure-complete</include>
+                                    <include>cider:cider-nrepl</include>
                                 </includes>
                             </artifactSet>
                             <shadedArtifactAttached>true</shadedArtifactAttached>

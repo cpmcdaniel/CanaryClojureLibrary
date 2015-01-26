@@ -4,7 +4,8 @@
               :init init
               :state state
               :constructors {[net.canarymod.plugin.PluginDescriptor] []})
-  (:use [clojure.tools.nrepl.server :only [start-server stop-server]])
+  (:use [clojure.tools.nrepl.server :only [start-server stop-server]]
+        [cider.nrepl :only [cider-nrepl-handler]])
   (:import (net.canarymod.plugin Plugin PluginDescriptor Priority PluginListener)
            (net.canarymod.exceptions InvalidPluginException)
            (net.canarymod Canary Translator)
@@ -100,15 +101,6 @@
 (defn trace [msg]
   (.trace *logman* msg))
 
-(defn -init [^PluginDescriptor desc]
-  (let [plugin-ns (.trim (.getString (.getCanaryInf desc) "clojure-namespace" ""))]
-    (if (empty? plugin-ns)
-      (throw (InvalidPluginException. "clojure-namespace must be defined for Clojure plugins!"))
-      [[] (atom {:plugin-descriptor desc
-                 :plugin-ns plugin-ns
-                 :name (.getName desc)
-                 :priority (.getPriority desc)})])))
-
 
 ;;; REPL setup ;;;
 
@@ -128,17 +120,18 @@
 
 (defn- start-repl
   "Will start a REPL if configured to do so and if there is not already a REPL
-   running for this plugin."
+  running for this plugin."
   [plugin]
   (when (and
-          (start-repl? plugin)                              ; should we start a repl?
-          (not (contains? @repls plugin)))                  ; already started?
+         (start-repl? plugin)                              ; should we start a repl?
+         (not (contains? @repls plugin)))                  ; already started?
     (let [port (get-port @repls)]
       (info (format "Starting REPL on port %d" port))
       (swap! repls
              #(assoc % plugin
-                       (with-plugin plugin                  ; this may be in another thread
-                                    (start-server :port (get-port @repls)))))
+                     (with-plugin plugin                   ; this may be in another thread
+                       (start-server :port (get-port @repls)
+                                     :handler cider-nrepl-handler))))
       (debug (format "%d REPLs are running" (count @repls))))))
 
 (defn- stop-repl [plugin]
@@ -148,19 +141,51 @@
     (stop-server repl)
     (swap! repls #(dissoc % plugin))))
 
+(defn -init [^PluginDescriptor desc]
+  (let [plugin-ns (.trim (.getString (.getCanaryInf desc) "clojure-namespace" ""))]
+    (if (empty? plugin-ns)
+      (throw (InvalidPluginException. "clojure-namespace must be defined for Clojure plugins!"))
+      [[] (atom {:plugin-descriptor desc
+                 :plugin-ns plugin-ns
+                 :name (.getName desc)
+                 :priority (.getPriority desc)})])))
+
+(defn -plugin-ns [this]
+  (:plugin-ns @(.state this)))
+
+(defn -enable-fn [this]
+  (if-let [enable-fn (:enable @(.state this))]
+    enable-fn
+    (let [plugin-ns-sym (symbol (-plugin-ns this))
+          enable-fn (do (require plugin-ns-sym)
+                        (ns-resolve plugin-ns-sym (symbol "enable")))]
+      (swap! (.state this) (fn [state] (assoc state :enable enable-fn)))
+      enable-fn)))
+
+(defn -ns-enable [this]
+  (let [enable (-enable-fn this)]
+    (info (str "Enabling ns: " (-plugin-ns this)))
+                 (enable this)))
 
 (defn -enable [this]
   (with-plugin this
                (start-repl this)
-               (let [plugin-ns-sym (symbol (:plugin-ns @(.state this)))]
-                 (info (str "Loading ns: " plugin-ns-sym))
-                 (require plugin-ns-sym)
-                 (let [enable (ns-resolve plugin-ns-sym (symbol "enable"))]
-                   (enable this)))))
+               (-ns-enable this)))
+
+(defn -ns-disable [this]
+  (info (str "Disabling ns: " (-plugin-ns this)))
+  (.unregisterPluginListeners (Canary/hooks) this)
+  (.unregisterCommands (Canary/commands) this))
 
 (defn -disable [this]
   (with-plugin this
                (stop-repl this)
-               (.unregisterPluginListeners (Canary/hooks) this)
-               (.unregisterCommands (Canary/commands) this)))
+               (-ns-disable this)))
 
+(defn reload
+  "Unregisters all hooks and commands for this plugin and re-registers them."
+  ([]
+   (reload *plugin*))
+  ([plugin]
+   (-ns-disable plugin)
+   (-ns-enable plugin)))

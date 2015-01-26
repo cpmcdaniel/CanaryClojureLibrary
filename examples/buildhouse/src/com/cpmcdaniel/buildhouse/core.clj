@@ -1,6 +1,6 @@
 (ns com.cpmcdaniel.buildhouse.core
   (:use [net.canarymod.plugin.lang.clojure.clj-plugin
-         :only [info register-command]]))
+         :only [info register-command reload]]))
 
 (defn enable
   "Enable the Build House plugin"
@@ -15,3 +15,8 @@
                     (fn [_ _]
                       (info "Building a house!")))
   true)
+
+(comment
+  ; Test reloading plugin at the REPL...
+  (reload)
+  )
