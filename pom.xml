@@ -149,7 +149,7 @@
     </dependencies>
 
     <build>
-        <defaultGoal>clean install</defaultGoal>
+        <defaultGoal>clean clojure:compile install</defaultGoal>
         <!-- Adds the build number if it is set -->
         <finalName>${project.name}-${project.version}${build.number}</finalName>
         <!-- Plugins -->

@@ -9,3 +9,4 @@ release.properties
 .DS_Store
 /config/
 /lang/
+atlassian-ide-plugin.xml
