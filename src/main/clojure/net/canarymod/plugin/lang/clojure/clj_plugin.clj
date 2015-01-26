@@ -1,10 +1,17 @@
-(ns net.canarymod.plugin.lang.clojure.core
+(ns net.canarymod.plugin.lang.clojure.clj-plugin
+  (:gen-class :name net.canarymod.plugin.lang.clojure.CljPlugin
+              :extends net.canarymod.plugin.Plugin
+              :init init
+              :state state
+              :constructors {[net.canarymod.plugin.PluginDescriptor] []})
   (:use [clojure.tools.nrepl.server :only [start-server stop-server]])
-  (:import (net.canarymod.plugin PluginListener Priority)
-           (net.canarymod.hook Hook Dispatcher)
+  (:import (net.canarymod.plugin Plugin PluginDescriptor Priority PluginListener)
+           (net.canarymod.exceptions InvalidPluginException)
            (net.canarymod Canary Translator)
-           (net.canarymod.commandsys DynamicCommandAnnotation CanaryCommand TabCompleteDispatch)
-           (net.canarymod.logger Logman)))
+           (net.canarymod.logger Logman)
+           (net.canarymod.hook Dispatcher Hook)
+           (net.canarymod.commandsys CanaryCommand TabCompleteDispatch DynamicCommandAnnotation)
+           (net.canarymod.config Configuration)))
 
 (def ^{:dynamic 1} *plugin* nil)
 (def ^{:dynamic 1} *logman* (Logman/getLogman "ClojurePlugin"))
@@ -16,20 +23,6 @@
              *logman* (.getLogman ~plugin)]
      ~@body))
 
-(def ^{:private 1} repls (atom {}))
-
-(declare stop-repl)
-
-(defn start-repl [plugin port]
-  (if (contains? @repls plugin)
-    (stop-repl plugin)
-    (swap! repls #(assoc % plugin
-                           (with-plugin plugin
-                             (start-server :port port))))))
-
-(defn stop-repl [plugin]
-  (stop-server (get @repls plugin))
-  (swap! repls #(dissoc % plugin)))
 
 (defn register-hook
   "Register a hook with CanaryMod.
@@ -46,7 +39,7 @@
                    (proxy [Dispatcher] []
                      (execute [^PluginListener listener ^Hook hook]
                        (with-plugin plugin
-                         (hook-fn hook))))
+                                    (hook-fn hook))))
                    priority)))
 
 (defn- string-array [coll]
@@ -87,7 +80,7 @@
                                 tcd]
                           (execute [caller args]
                             (with-plugin plugin
-                              (command caller args))))
+                                         (command caller args))))
                         plugin
                         force))))
 
@@ -106,3 +99,68 @@
 
 (defn trace [msg]
   (.trace *logman* msg))
+
+(defn -init [^PluginDescriptor desc]
+  (let [plugin-ns (.trim (.getString (.getCanaryInf desc) "clojure-namespace" ""))]
+    (if (empty? plugin-ns)
+      (throw (InvalidPluginException. "clojure-namespace must be defined for Clojure plugins!"))
+      [[] (atom {:plugin-descriptor desc
+                 :plugin-ns plugin-ns
+                 :name (.getName desc)
+                 :priority (.getPriority desc)})])))
+
+
+;;; REPL setup ;;;
+
+(def ^{:private 1} repls (atom {}))
+
+(defn- start-repl?
+  "Reads the 'repl' property from the plugin configuration, which defaults to 'off'.
+   Can be changed to 'on' for development purposese, but should be left off in a
+   multiplayer server."
+  [plugin]
+  (.getBoolean (Configuration/getPluginConfig plugin) "repl" false))
+
+(declare stop-repl)
+
+(defn- get-port [repls]
+  (inc (reduce max 9960 (map :port (vals repls)))))
+
+(defn- start-repl
+  "Will start a REPL if configured to do so and if there is not already a REPL
+   running for this plugin."
+  [plugin]
+  (when (and
+          (start-repl? plugin)                              ; should we start a repl?
+          (not (contains? @repls plugin)))                  ; already started?
+    (let [port (get-port @repls)]
+      (info (format "Starting REPL on port %d" port))
+      (swap! repls
+             #(assoc % plugin
+                       (with-plugin plugin                  ; this may be in another thread
+                                    (start-server :port (get-port @repls)))))
+      (debug (format "%d REPLs are running" (count @repls))))))
+
+(defn- stop-repl [plugin]
+  (when-let [repl (get @repls plugin)]
+    (debug (format "%d REPLs are running" (count @repls)))
+    (info (format "Stopping REPL on port %d" (:port repl)))
+    (stop-server repl)
+    (swap! repls #(dissoc % plugin))))
+
+
+(defn -enable [this]
+  (with-plugin this
+               (start-repl this)
+               (let [plugin-ns-sym (symbol (:plugin-ns @(.state this)))]
+                 (info (str "Loading ns: " plugin-ns-sym))
+                 (require plugin-ns-sym)
+                 (let [enable (ns-resolve plugin-ns-sym (symbol "enable"))]
+                   (enable this)))))
+
+(defn -disable [this]
+  (with-plugin this
+               (stop-repl this)
+               (.unregisterPluginListeners (Canary/hooks) this)
+               (.unregisterCommands (Canary/commands) this)))
+

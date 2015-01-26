@@ -1,5 +1,5 @@
 (ns com.cpmcdaniel.cowshooter.core
-  (:use net.canarymod.plugin.lang.clojure.core)
+  (:use net.canarymod.plugin.lang.clojure.clj-plugin)
   (:import (net.canarymod.api.entity.living LivingBase)
            (net.canarymod Canary)
            (net.canarymod.hook.player ItemUseHook)
@@ -94,7 +94,6 @@
   "Enable the Cow Shooter Plugin."
   [plugin]
   (info "Enabling cow shooter hook")
-  (start-repl plugin 9963)
   (register-hook plugin ItemUseHook shoot-cow-hook)
   (register-command plugin {:aliases ["cowpower"]
                             :permissions [""]
@@ -117,7 +116,6 @@
 (defn disable
   "Disable the Cow Shooter Plugin."
   [plugin]
-  (stop-repl plugin)
   (info "Disabling Cow Shooter Plugin"))
 
 

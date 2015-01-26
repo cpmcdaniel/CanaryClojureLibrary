@@ -7,6 +7,9 @@
     <groupId>net.canarymod</groupId>
     <artifactId>clojurepluginlib</artifactId>
     <version>1.0.0-SNAPSHOT</version>
+
+    <packaging>clojure</packaging>
+
     <inceptionYear>2015</inceptionYear>
     <url>https://github.com/cpmcdaniel/CanaryClojureLibrary</url>
 
@@ -123,6 +126,7 @@
             <groupId>org.clojure</groupId>
             <artifactId>tools.nrepl</artifactId>
             <version>0.2.6</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
@@ -201,6 +205,21 @@
                     <goals>jar:jar</goals>
                     <tagNameFormat>@{project.version}</tagNameFormat>
                 </configuration>
+            </plugin>
+
+            <!-- Clojure -->
+            <plugin>
+                <groupId>com.theoryinpractise</groupId>
+                <artifactId>clojure-maven-plugin</artifactId>
+                <version>1.3.20</version>
+                <extensions>true</extensions>
+                <!--<configuration>
+                    <namespaces>
+                        <namespace>net.canarymod.plugin.lang.clojure.clj-plugin</namespace>
+                    </namespaces>
+                    <compileDeclaredNamespaceOnly>true</compileDeclaredNamespaceOnly>
+                    <testDeclaredNamespaceOnly>true</testDeclaredNamespaceOnly>
+                </configuration>-->
             </plugin>
         </plugins>
     </build>

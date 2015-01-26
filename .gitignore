@@ -7,3 +7,5 @@ release.properties
 *.iml
 .idea/
 .DS_Store
+/config/
+/lang/
