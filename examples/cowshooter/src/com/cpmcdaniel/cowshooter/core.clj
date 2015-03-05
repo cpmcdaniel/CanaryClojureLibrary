@@ -78,22 +78,10 @@
     (when (< 0 pnum 50)
       (reset! cow-power pnum))))
 
-(defn spawn-ender-dragon [caller [_ subcommand]]
-  (when (= "spawn" subcommand)
-    (info "Spawning dragon")
-    (spawn-entity-living
-      (let [dragon (doto (.getLocation caller)
-                     (.moveX 5)
-                     (.moveZ 5))]
-        (println (.getName dragon))
-        (println (.getFqName dragon))
-        dragon)
-      EntityType/ENDERDRAGON)))
-
 (defn enable
   "Enable the Cow Shooter Plugin."
   [plugin]
-  (info "Enabling cow shooter hook")
+  (info "Enabling cow shooter")
   (register-hook plugin ItemUseHook shoot-cow-hook)
   (register-command plugin {:aliases ["cowpower"]
                             :permissions [""]
@@ -102,20 +90,10 @@
                             :min 2
                             :max 2}
                     set-cow-power!)
-  (register-command plugin
-                    {:aliases ["dragon"]
-                     :permissions [""]
-                     :description "commands for ender dragons"
-                     :tooltip "/dragon spawn"
-                     :min 2
-                     :max 2}
-                    spawn-ender-dragon)
-  (info "Cow shooter hook enabled")
+  (info "Cow shooter enabled")
   true)
 
 (defn disable
   "Disable the Cow Shooter Plugin."
   [plugin]
-  (info "Disabling Cow Shooter Plugin"))
-
-
+  (info "Disabling cow shooter"))

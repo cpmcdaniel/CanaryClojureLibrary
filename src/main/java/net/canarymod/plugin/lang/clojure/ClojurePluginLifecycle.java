@@ -24,7 +24,8 @@ public class ClojurePluginLifecycle extends PluginLifecycleBase {
     @Override
     protected void _load() throws PluginLoadFailedException {
         try {
-            cl = new CanaryClassLoader(new File(desc.getPath()).toURI().toURL(), getClass().getClassLoader());
+            cl = new CanaryClassLoader(new File(desc.getPath()).toURI().toURL(),
+                                       getClass().getClassLoader());
             Thread.currentThread().setContextClassLoader(cl);
 
             //A hacky way of getting the name in during the constructor/initializer
