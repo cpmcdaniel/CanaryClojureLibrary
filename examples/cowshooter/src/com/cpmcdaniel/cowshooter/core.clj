@@ -75,7 +75,7 @@
   [_ [_ power]]
   (let [pnum (Float/parseFloat power)]
     (debug "Setting cow explosive power")
-    (when (< 0 pnum 50)
+    (when (< 0 pnum 51)
       (reset! cow-power pnum))))
 
 (defn enable
