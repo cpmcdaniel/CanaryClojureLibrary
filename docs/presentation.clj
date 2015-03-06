@@ -48,6 +48,9 @@ Math/PI
 (.. System (getProperties) (get "os.name"))
 ;; -> "Mac OS X"
 
+;; instead of
+(.get (System/getProperties) "os.name")
+
 ;; expands to
 (. (. System (getProperties)) (get "os.name"))
 
@@ -225,3 +228,17 @@ Math/PI
    :blue 0,
    :alpha 255,
    :RGB -16777216})
+
+
+
+;; For dabbling with CljPlugin at the REPL
+(use '[net.canarymod.plugin.lang.clojure.clj-plugin])
+(import '[net.canarymod.chat Colors])
+
+(.. Canary getServer (broadcastMessage (str Colors/GREEN "Hello from the REPL!")))
+
+
+
+(.trim (.getString (.getCanaryInf (.getDescriptor *plugin*)) "clojure-namespace" ""))
+
+(.. *plugin* (getDescriptor) (getCanaryInf) (getString "clojure-namespace" "") (trim))

@@ -165,7 +165,7 @@
 (defn -ns-enable [this]
   (let [enable (-enable-fn this)]
     (info (str "Enabling ns: " (-plugin-ns this)))
-                 (enable this)))
+    (enable this)))
 
 (defn -enable [this]
   (with-plugin this
