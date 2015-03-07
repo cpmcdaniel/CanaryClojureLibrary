@@ -97,3 +97,5 @@
   "Disable the Cow Shooter Plugin."
   [plugin]
   (info "Disabling cow shooter"))
+
+;; (shoot-cow (.. Canary getServer (getPlayer "KowboyMac")))

@@ -1,0 +1,5 @@
+language=clojure
+name=ClojurePlugin
+version=0.1.0-SNAPSHOT
+author=Craig McDaniel
+clojure-namespace=com.cpmcdaniel.canary.clojure-plugin

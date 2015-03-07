@@ -182,10 +182,10 @@
                (stop-repl this)
                (-ns-disable this)))
 
-(defn reload
+(defn reload-plugin
   "Unregisters all hooks and commands for this plugin and re-registers them."
   ([]
-   (reload *plugin*))
+   (reload-plugin *plugin*))
   ([plugin]
    (-ns-disable plugin)
    (-ns-enable plugin)))
