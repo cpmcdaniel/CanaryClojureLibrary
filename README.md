@@ -7,7 +7,7 @@ Source-only insall is supported at this time. Requires CanaryMod >= 1.2.0.
 
 - Clone the repository
 - Run `mvn install` from the project root
-- Copy *target/clojurepluginlib-VERSION.jar* into the CanaryMod server's *pluginlangs* directory (note: this was added in CanaryMod 1.2.0)
+- Copy *target/clojurepluginlib-VERSION-independent.jar* into the CanaryMod server's *pluginlangs* directory (note: this was added in CanaryMod 1.2.0)
 
 # Writing a Clojure plugin
 
@@ -34,7 +34,8 @@ You need a namespace that will serve as an entry point for loading the plugin. T
 (defn enable
   "Enable the plugin"
   [plugin]
-  (info "Enabling ClojurePlugin"))
+  (info "Enabling ClojurePlugin")
+  true)
 
 (defn disable
   "Disable the plugin"
@@ -49,6 +50,8 @@ version=0.1.0-SNAPSHOT
 author=Craig McDaniel
 clojure-namespace=com.cpmcdaniel.canary.clojure-plugin
 ```
+
+To enable the Clojure REPL for the plugin above, open the *config/ClojurePlugin/ClojurePlugin.cfg* file and add `repl=true`
 
 Finally, package the Clojure code and Canary.inf into a JAR file and copy it to the CanaryMod server *plugins* directory.
 

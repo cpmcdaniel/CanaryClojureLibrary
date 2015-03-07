@@ -4,7 +4,8 @@
 (defn enable
   "Enable the plugin"
   [plugin]
-  (info "Enabling ClojurePlugin"))
+  (info "Enabling ClojurePlugin")
+  true)
 
 (defn disable
   "Disable the plugin"
