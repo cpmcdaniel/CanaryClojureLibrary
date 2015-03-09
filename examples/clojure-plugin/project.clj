@@ -1,4 +1,4 @@
-(defproject clojure-plugin "0.1.0-SNAPSHOT"
+(defproject cpmcdaniel/clojure-plugin "1.0-SNAPSHOT"
   :description "A bare-bones Clojure CanaryMod Plugin with REPL"
   :url "https://github.com/cpmcdaniel/CanaryClojureLibrary"
   :license {:name "BSD 3-Clause License"

@@ -1,15 +1,24 @@
 (set-env!
  :source-paths   #{"src/main/java" "src/main/clojure"}
  :resource-paths #{"src/main/resources"}
- :dependencies   '[[cpmcdaniel/boot-with-pom "0.0.1" :scope "provided"]])
+ :dependencies   '[[cpmcdaniel/boot-with-pom "1.0" :scope "provided"]
+                   [cpmcdaniel/boot-copy "1.0" :scope "provided"]])
+
+(require '[cpmcdaniel.boot-with-pom :refer :all]
+         '[cpmcdaniel.boot-copy :refer :all]
+         '[clojure.pprint :refer [pprint]]
+         '[clojure.java.io :as io]
+         '[boot.util :as util])
 
 (task-options!
  aot  {:namespace     #{'net.canarymod.plugin.lang.clojure.clj-plugin}}
- uber {:exclude-scope #{"provided"}})
+ uber {:exclude-scope #{"provided"}}
+ copy {:output-dir    "/Users/cmcdaniel/Desktop/server/pluginlangs"
+       :matching       #{#"\.jar$"}})
 
-(require '[cpmcdaniel.boot-with-pom :refer :all])
+
 
 (deftask build
    "Build my project"
    []
-   (comp (with-pom) (aot) (javac) (uber) (jar) (install)))
+   (comp (watch) (with-pom) (aot) (javac) (uber) (jar) (copy)))
