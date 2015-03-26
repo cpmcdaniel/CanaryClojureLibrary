@@ -1,5 +1,5 @@
 (ns com.cpmcdaniel.canary.clojure-plugin
-  (:use net.canarymod.plugin.lang.clojure.clj-plugin))
+  (:require [net.canarymod.plugin.lang.clojure.canary :refer [info]]))
 
 ;; This is a bare-bones plugin intended to be used for REPL experimentation
 ;; be sure to add `repl=true` to the ClojurePlugin.cfg file in the server

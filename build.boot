@@ -11,7 +11,8 @@
          '[boot.util :as util])
 
 (task-options!
- aot  {:namespace     #{'net.canarymod.plugin.lang.clojure.clj-plugin}}
+ aot  {:namespace     #{'net.canarymod.plugin.lang.clojure.clj-plugin
+                        'net.canarymod.plugin.lang.clojure.canary}}
  uber {:exclude-scope #{"provided"}}
  copy {:output-dir    "/Users/cmcdaniel/Desktop/server/pluginlangs"
        :matching       #{#"\.jar$"}})
@@ -21,4 +22,4 @@
 (deftask build
    "Build my project"
    []
-   (comp (watch) (with-pom) (aot) (javac) (uber) (jar) (copy)))
+   (comp (watch) (speak) (with-pom) (aot) (javac) (uber) (jar) (install) (copy)))

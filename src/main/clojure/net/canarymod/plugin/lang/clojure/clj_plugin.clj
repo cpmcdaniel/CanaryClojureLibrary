@@ -3,9 +3,11 @@
               :extends net.canarymod.plugin.Plugin
               :init init
               :state state
-              :constructors {[net.canarymod.plugin.PluginDescriptor] []})
-  (:use [clojure.tools.nrepl.server :only [start-server stop-server]]
-        [cider.nrepl :only [cider-nrepl-handler]])
+              :constructors {[net.canarymod.plugin.PluginDescriptor] []}
+              :methods [[reload [] java.lang.Object]])
+  (:require [clojure.tools.nrepl.server :refer [start-server stop-server]]
+            [cider.nrepl :refer [cider-nrepl-handler]]
+            [net.canarymod.plugin.lang.clojure.canary :refer :all])
   (:import (net.canarymod.plugin Plugin PluginDescriptor Priority PluginListener)
            (net.canarymod.exceptions InvalidPluginException)
            (net.canarymod Canary Translator)
@@ -14,96 +16,7 @@
            (net.canarymod.commandsys CanaryCommand TabCompleteDispatch DynamicCommandAnnotation)
            (net.canarymod.config Configuration)))
 
-(def ^{:dynamic 1} *plugin* nil)
-(def ^{:dynamic 1} *logman* (Logman/getLogman "ClojurePlugin"))
-
-(defmacro with-plugin
-  "Creates thread-local bindings for *plugin* and *logman*."
-  [plugin & body]
-  `(binding [*plugin* ~plugin
-             *logman* (.getLogman ~plugin)]
-     ~@body))
-
-
-(defn register-hook
-  "Register a hook with CanaryMod.
-  Takes the plugin instance, the hook-type (Java class), and hook-fn. The
-  hook-fn will be passed a single argument, an instance of hook-type.
-  Optionally takes a Priority as the final argument."
-  ([plugin hook-type hook-fn]
-    (register-hook plugin hook-type hook-fn Priority/NORMAL))
-  ([plugin hook-type hook-fn priority]
-    (.registerHook (Canary/hooks)
-                   (reify PluginListener)
-                   plugin
-                   hook-type
-                   (proxy [Dispatcher] []
-                     (execute [^PluginListener listener ^Hook hook]
-                       (with-plugin plugin
-                                    (hook-fn hook))))
-                   priority)))
-
-(defn- string-array [coll]
-  (into-array java.lang.String coll))
-
-(defn- as-command-annotation
-  "Converts a map of command configuration to Command annotation data using
-  DynamicCommandAnnotation class."
-  [{:keys [aliases permissions description tooltip parent help-lookup
-           search-terms min max version]
-    :or {aliases [] permissions [] description "" tooltip "" parent ""
-         help-lookup "" search-terms [] min 1 max -1 version 1}}]
-  (DynamicCommandAnnotation. (string-array aliases)
-                             (string-array permissions)
-                             description tooltip parent help-lookup
-                             (string-array search-terms)
-                             min max "" version))
-
-(defn register-command
-  "Registers a command function.
-  Takes the plugin instance, a map of command configuration data, and the
-  function to execute. Optionally takes a boolean force argument (defaults
-  to false)."
-  ([plugin command-meta command]
-    (register-command plugin command-meta command false))
-
-  ([plugin command-meta command force]
-    (let [tab-complete (or (:tab-complete command-meta)
-                           (constantly []))                    ; no completion, by default
-          tcd (reify TabCompleteDispatch
-                (complete [this caller args]
-                  (tab-complete caller args)))]
-      (.registerCommand (Canary/commands)
-                        (proxy [CanaryCommand]
-                               [(as-command-annotation command-meta)
-                                plugin
-                                (or (:translator command-meta) (Translator/getInstance))
-                                tcd]
-                          (execute [caller args]
-                            (with-plugin plugin
-                                         (command caller args))))
-                        plugin
-                        force))))
-
-;; Logging functions
-(defn info [msg]
-  (.info *logman* msg))
-
-(defn error [msg]
-  (.error *logman* msg))
-
-(defn debug [msg]
-  (.debug *logman* msg))
-
-(defn warn [msg]
-  (.warn *logman* msg))
-
-(defn trace [msg]
-  (.trace *logman* msg))
-
-
 ;;; REPL setup ;;;
-
 (def ^{:private 1} repls (atom {}))
 
 (defn- start-repl?
@@ -118,7 +31,7 @@
 (defn- get-port [repls]
   (inc (reduce max 9960 (map :port (vals repls)))))
 
-(defn- start-repl
+(defn start-repl
   "Will start a REPL if configured to do so and if there is not already a REPL
   running for this plugin."
   [plugin]
@@ -134,7 +47,7 @@
                                      :handler cider-nrepl-handler))))
       (debug (format "%d REPLs are running" (count @repls))))))
 
-(defn- stop-repl [plugin]
+(defn stop-repl [plugin]
   (when-let [repl (get @repls plugin)]
     (debug (format "%d REPLs are running" (count @repls)))
     (info (format "Stopping REPL on port %d" (:port repl)))
@@ -182,10 +95,6 @@
                (stop-repl this)
                (-ns-disable this)))
 
-(defn reload-plugin
-  "Unregisters all hooks and commands for this plugin and re-registers them."
-  ([]
-   (reload-plugin *plugin*))
-  ([plugin]
-   (-ns-disable plugin)
-   (-ns-enable plugin)))
+(defn -reload [this]
+  (-ns-disable this)
+  (-ns-enable this))

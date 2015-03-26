@@ -1,7 +1,6 @@
 (ns com.cpmcdaniel.cowshooter.core
-  (:use net.canarymod.plugin.lang.clojure.clj-plugin)
-  (:import (net.canarymod.api.entity.living LivingBase)
-           (net.canarymod Canary)
+  (:require [net.canarymod.plugin.lang.clojure.canary :refer :all])
+  (:import (net.canarymod Canary)
            (net.canarymod.hook.player ItemUseHook)
            (net.canarymod.api.inventory ItemType)
            (net.canarymod.api.world.position Location)
@@ -14,36 +13,18 @@
 
 (defn fling
   "Launch a living thing from the player on a trajectory"
-  [^LivingBase player
-   ^LivingBase entity
-   ^double factor]
-  (let [pitch (double (/ (* (+ (.getPitch player) 90.0) Math/PI) 180.0))
-        rot (double (/ (* (+ (.getRotation player) 90.0) Math/PI) 180.0))]
-    (.moveEntity entity
-                 (* factor (Math/sin pitch) (Math/cos rot))
-                 (+ (Math/cos pitch) 0.5)
-                 (* factor (Math/sin pitch) (Math/sin rot)))))
+  [source projectile factor]
+  (let [pitch (double (/ (* (+ (pitch source) 90.0) Math/PI) 180.0))
+        rot (double (/ (* (+ (rotation source) 90.0) Math/PI) 180.0))]
+    (move projectile
+          (* factor (Math/sin pitch) (Math/cos rot))
+          (+ (Math/cos pitch) 0.5)
+          (* factor (Math/sin pitch) (Math/sin rot)))))
 
-(defn spawn-entity-living
-  "Spawns a living entity"
-  [^Location loc ^EntityType entity-type]
-  (doto
-    (.. (Canary/factory) (getEntityFactory) (newEntityLiving entity-type loc))
-    (.spawn)))
-
-
-(defn explode-cow [^Cow cow]
-  (let [^Location loc (.getLocation cow)]
-    (.setHealth cow 0)
-    (.kill cow)
-    (.. cow (getWorld) (makeExplosion cow
-                                      (.getX loc) (.getY loc) (.getZ loc)
-                                      @cow-power true))))
-
-(defn burn-cow [^Cow cow]
+(defn burn-cow [cow]
   (doto cow
-    (.setFireTicks 600)
-    (.setHealth (.getMaxHealth cow))))
+    (burn 600)
+    (max-health!)))
 
 (defn cow-task [^Cow cow plugin]
   (proxy [ServerTask] [(Canary/getServer) 0 true] ; delay = 0, isContinuous
@@ -52,15 +33,15 @@
         (if (.isOnGround cow)
           (do
             (debug "Blowing up cow!")
-            (explode-cow cow)
+            (explode cow @cow-power)
             (.removeSynchronousTask (Canary/getServer) this))
           (burn-cow cow))))))
 
 (defn shoot-cow [^Player player]
   (let [^Location loc (.getLocation player)
-        ^Cow cow (spawn-entity-living
-                   (doto loc (.setY (inc (.getY loc))))
-                   EntityType/MOOSHROOM)]
+        ^Cow cow (spawn-entity
+                  (move-y loc 1)
+                  EntityType/MOOSHROOM)]
     (debug "Shooting cow!")
     (.addSynchronousTask (Canary/getServer) (cow-task cow *plugin*))
     (fling player cow 3.0)
@@ -98,4 +79,4 @@
   [plugin]
   (info "Disabling cow shooter"))
 
-;; (shoot-cow (.. Canary getServer (getPlayer "KowboyMac")))
+;;(shoot-cow (.. Canary getServer (getPlayer "KowboyMac")))

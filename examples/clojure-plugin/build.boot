@@ -1,6 +1,6 @@
 (set-env!
  :source-paths   #{"src"}
- :resource-paths #{"resources"}
+ :resource-paths #{"resources" "src"}
  :dependencies   '[[cpmcdaniel/boot-copy "1.0" :scope "provided"]
                    [net.canarymod/clojurepluginlib "1.0.0-SNAPSHOT" :scope "provided"]]
  :repositories   #(conj % ["vi-repo" "http://repo.visualillusionsent.net/repository/public/"]))
